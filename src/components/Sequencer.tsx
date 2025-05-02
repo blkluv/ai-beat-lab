@@ -24,7 +24,7 @@ const DRUM_SOUNDS = ['Kick', 'Snare', 'HiHat', 'Clap', 'OpenHat', 'Tom', 'Crash'
 
 function getMastraFetchUrl() {
   if (process.env.NODE_ENV === 'production') {
-    return 'https://faint-numerous-laptop.mastra.cloud';
+    return 'https://dj.jersey.fm';
   } else {
     return 'http://localhost:4111';
   }
@@ -101,7 +101,7 @@ export const Sequencer = () => {
     };
 
     const encoded = btoa(JSON.stringify(beatData));
-    const url = `<span class="math-inline">\{window\.location\.origin\}</span>{window.location.pathname}?beat=${encoded}`;
+    const url = `${window.location.origin}${window.location.pathname}?beat=${encoded}`;
 
     navigator.clipboard.writeText(url).then(() => {
       toast({
@@ -323,41 +323,11 @@ export const Sequencer = () => {
               }
             }
           }
-        }),
-      })
-
-      const data = await result.json();
-
-      const pianoSequence = {
-        "C5": data.object.C5 || [],
-        "B4": data.object.B4 || [],
-        "A4": data.object.A4 || [],
-        "G4": data.object.G4 || [],
-        "F4": data.object.F4 || [],
-        "E4": data.object.E4 || [],
-        "D4": data.object.D4 || [],
-        "C4": data.object.C4 || [],
-        'B3': data.object.B3 || [],
-        'A3': data.object.A3 || [],
-        'G3': data.object.G3 || [],
-      };
-
-      const drumSequence = {
-        "Kick": data.object.Kick || [],
-        "Snare": data.object.Snare || [],
-        "HiHat": data.object?.['HiHat'] || [],
-        "Clap": data.object.Clap || [],
-        "OpenHat": data.object['OpenHat'] || [],
-        "Tom": data.object.Tom || [],
-        "Crash": data.object.Crash || [],
-        "Ride": data.object.Ride || [],
-        "Shaker": data.object.Shaker || [],
-        "Cowbell": data.object.Cowbell || [],
-      };
-
-      setDrumSequence(drumSequence);
-      setPianoSequence(pianoSequence);
-      stopSequence();
+        })
+      });
+      const generated = await result.json();
+      setPianoSequence(generated);
+      setDrumSequence(generated);
     } catch (error) {
       console.error('Error generating sequence:', error);
     } finally {
@@ -365,111 +335,62 @@ export const Sequencer = () => {
     }
   };
 
-  const playSequence = () => {
-    const ctx = getAudioContext();
-    ctx.resume();
-
-    setIsPlaying(true);
-    setCurrentStep(0);
-
-    const stepDuration = (60 / JERSEY_CLUB_PRESETS[tempo].bpm) * 1000 / 4; // Use Jersey Club tempo
-
-
-    sequencerInterval.current = window.setInterval(() => {
-      setCurrentStep(prev => {
-        const nextStep = (prev + 1) % STEPS;
-
-        Object.entries(pianoSequence).forEach(([note, steps]) => {
-          if (steps.includes(prev)) {
-            playNoteByName(note);
-          }
-        });
-
-        Object.entries(drumSequence).forEach(([sound, steps]) => {
-          if (steps.includes(prev)) {
-            playDrumSound(sound);
-          }
-        });
-
-        return nextStep;
-      });
-    }, stepDuration);
-  };
-
-  const stopSequence = () => {
-    if (sequencerInterval.current) {
-      clearInterval(sequencerInterval.current);
-      sequencerInterval.current = null;
+  const togglePlay = () => {
+    setIsPlaying(prev => !prev);
+    if (!isPlaying) {
+      sequencerInterval.current = window.setInterval(() => {
+        setCurrentStep(prev => (prev + 1) % STEPS);
+      }, (60 / 120) * 1000); // Change 120 to whatever tempo you want
+    } else {
+      if (sequencerInterval.current) {
+        clearInterval(sequencerInterval.current);
+      }
     }
-    setIsPlaying(false);
-    setCurrentStep(0);
   };
-
-  const isMobile = useIsMobile();
 
   return (
-    <div className="bg-muted/50 backdrop-blur-sm rounded-xl p-4 md:p-8 shadow-xl animate-slide-in w-full mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 gap-4">
-        <div className="flex items-center gap-3">
-          <Music2 className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-          <div className="space-y-0.5 md:space-y-1">
-            <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              JERSEY.FM DJ
-            </h1>
-            <p className="text-xs md:text-sm text-primary/70">The AI-powered Jersey Club beat lab for livestream challenges & social sound battles.</p>
+    <div className="sequencer-container">
+      <div className="controls">
+        <Button onClick={togglePlay}>
+          {isPlaying ? <Pause /> : <Play />}
+        </Button>
+        <Button onClick={handleGenerateSequence} disabled={isGenerating}>
+          {isGenerating ? <Loader2 className="animate-spin" /> : 'Generate Beat'}
+        </Button>
+      </div>
+      <div className="sequencer-grid">
+        {PIANO_NOTES.map((note, index) => (
+          <div key={note}>
+            <h3>{note}</h3>
+            {Array.from({ length: STEPS }).map((_, stepIndex) => (
+              <Button
+                key={stepIndex}
+                onClick={() => togglePianoStep(note, stepIndex)}
+                variant={pianoSequence[note].includes(stepIndex) ? 'outline' : 'default'}
+              />
+            ))}
           </div>
+        ))}
+        {DRUM_SOUNDS.map((sound) => (
+          <div key={sound}>
+            <h3>{sound}</h3>
+            {Array.from({ length: STEPS }).map((_, stepIndex) => (
+              <Button
+                key={stepIndex}
+                onClick={() => toggleDrumStep(sound, stepIndex)}
+                variant={drumSequence[sound].includes(stepIndex) ? 'outline' : 'default'}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      {!isAudioInitialized && (
+        <div className="mb-4 md:mb-6 p-3 md:p-4 bg-yellow-100/10 border border-yellow-400/20 rounded-lg text-yellow-200">
+          Initializing audio...
         </div>
-        <div className="flex items-center gap-4">
-          <Select
-            value={tempo}
-            onValueChange={(value: keyof typeof JERSEY_CLUB_PRESETS) => {
-              setTempo(value);
-              if (isPlaying) {
-                stopSequence();
-                playSequence();
-              }
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Select tempo" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(JERSEY_CLUB_PRESETS).map(([key, { label, bpm }]) => (
-                <SelectItem key={key} value={key}>
-                  {label} ({bpm} BPM)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleExportMidi({ toast, tempo, pianoSequence, drumSequence })}
-            className="h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-primary/20"
-            title="Export MIDI"
-          >
-            <Download className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleShare}
-            className="h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-primary/20"
-            title="Share beat"
-          >
-            <Share2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => isPlaying ? stopSequence() : playSequence()}
-            className="h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-primary/20"
-          >
-            {isPlaying ?
-              <Pause className="h-5 w-5 md:h-6 md:w-6 text-primary" /> :
-              <Play className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            }
-          </Button>
-          {isPlaying && (
-            <Button
-              variant="ghost"
+      )}
+    </div>
+  );
+};
+
+export default Sequencer;
