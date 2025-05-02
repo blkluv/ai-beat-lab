@@ -1,5 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Music2, Volume2, Settings2, Loader2, ChevronDown, ChevronUp, Share2, Download, Wand2 } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Square,
+  Music2,
+  Volume2,
+  Settings2,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Share2,
+  Download,
+  Wand2,
+} from 'lucide-react';
+
 import {
   Select,
   SelectContent,
@@ -7,14 +21,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { useToast } from './ui/use-toast';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+
 import ReactMarkdown from 'react-markdown';
-import { playNoteByName, playDrumSound, loadDrumSamples, getAudioContext } from '@/lib/audio';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
-import { JERSEY_CLUB_PRESETS } from './constants'; // Updated import
+
+import {
+  playNoteByName,
+  playDrumSound,
+  loadDrumSamples,
+  getAudioContext,
+} from '@/lib/audio';
+
+import { useIsMobile } from '@/hooks/use-mobile';
+import { JERSEY_CLUB_PRESETS } from './constants';
 import { handleExportMidi } from './handleMidi';
 import { handleGenerateVariation } from './handleVariation';
 
