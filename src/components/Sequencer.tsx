@@ -14,7 +14,7 @@ import ReactMarkdown from 'react-markdown';
 import { playNoteByName, playDrumSound, loadDrumSamples, getAudioContext } from '@/lib/audio';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
-import { TEMPO_PRESETS } from './constants';
+import { JERSEY_CLUB_PRESETS } from './constants'; // Updated import
 import { handleExportMidi } from './handleMidi';
 import { handleGenerateVariation } from './handleVariation';
 
@@ -24,7 +24,7 @@ const DRUM_SOUNDS = ['Kick', 'Snare', 'HiHat', 'Clap', 'OpenHat', 'Tom', 'Crash'
 
 function getMastraFetchUrl() {
   if (process.env.NODE_ENV === 'production') {
-    return 'https://faint-numerous-laptop.mastra.cloud';
+    return 'https://dj.jersey.fm';
   } else {
     return 'http://localhost:4111';
   }
@@ -36,7 +36,7 @@ export const Sequencer = () => {
   const [reference, setReference] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
-  const [tempo, setTempo] = useState<keyof typeof TEMPO_PRESETS>('medium');
+  const [tempo, setTempo] = useState<keyof typeof JERSEY_CLUB_PRESETS>('classic'); // Updated tempo presets
   const [pianoSequence, setPianoSequence] = useState<Record<string, number[]>>(
     Object.fromEntries(PIANO_NOTES.map(note => [note, []]))
   );
@@ -73,6 +73,7 @@ export const Sequencer = () => {
           const decoded = JSON.parse(atob(beatData));
           setPianoSequence(decoded.piano);
           setDrumSequence(decoded.drum);
+          setTempo(decoded.tempo || 'classic'); // Load tempo if available, default to 'classic'
           toast({
             title: "Beat loaded",
             description: "The shared beat has been loaded successfully.",
@@ -100,7 +101,7 @@ export const Sequencer = () => {
     };
 
     const encoded = btoa(JSON.stringify(beatData));
-    const url = `${window.location.origin}${window.location.pathname}?beat=${encoded}`;
+    const url = `<span class="math-inline">\{window\.location\.origin\}</span>{window.location.pathname}?beat=${encoded}`;
 
     navigator.clipboard.writeText(url).then(() => {
       toast({
@@ -165,7 +166,7 @@ export const Sequencer = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [`Please make me a beat based on this information: ${d.text}`],
+          messages: [`Please make me a Jersey Club beat based on this information: ${d.text}`], // Updated prompt
           output: {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
@@ -371,7 +372,7 @@ export const Sequencer = () => {
     setIsPlaying(true);
     setCurrentStep(0);
 
-    const stepDuration = (60 / TEMPO_PRESETS[tempo].bpm) * 1000 / 4; // Convert BPM to milliseconds per step
+    const stepDuration = (60 / JERSEY_CLUB_PRESETS[tempo].bpm) * 1000 / 4; // Use Jersey Club tempo
 
 
     sequencerInterval.current = window.setInterval(() => {
@@ -421,7 +422,7 @@ export const Sequencer = () => {
         <div className="flex items-center gap-4">
           <Select
             value={tempo}
-            onValueChange={(value: keyof typeof TEMPO_PRESETS) => {
+            onValueChange={(value: keyof typeof JERSEY_CLUB_PRESETS) => {
               setTempo(value);
               if (isPlaying) {
                 stopSequence();
@@ -433,7 +434,7 @@ export const Sequencer = () => {
               <SelectValue placeholder="Select tempo" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(TEMPO_PRESETS).map(([key, { label, bpm }]) => (
+              {Object.entries(JERSEY_CLUB_PRESETS).map(([key, { label, bpm }]) => (
                 <SelectItem key={key} value={key}>
                   {label} ({bpm} BPM)
                 </SelectItem>
@@ -481,153 +482,3 @@ export const Sequencer = () => {
           )}
         </div>
       </div>
-
-      {!isAudioInitialized && (
-        <div className="mb-4 md:mb-6 p-3 md:p-4 bg-yellow-100/10 border border-yellow-400/20 rounded-lg text-yellow-200">
-          <p className="flex items-center gap-2 text-sm md:text-base">
-            <Volume2 className="h-4 w-4 md:h-5 md:w-5" />
-            Loading audio samples...
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4 mb-6">
-        <Input
-          placeholder="Enter your music prompt..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="w-full text-sm md:text-base"
-        />
-        <Button
-          onClick={handleGenerateSequence}
-          disabled={isGenerating || !prompt}
-          className="w-full md:w-auto md:ml-auto"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            'Generate'
-          )}
-        </Button>
-      </div>
-
-      {reference && (
-        <div className="mb-6 bg-primary/5 border border-primary/20 rounded-lg overflow-hidden transition-all duration-300">
-
-
-          <Button
-            variant="ghost"
-            size="default"
-            onClick={() => handleGenerateVariation({ pianoSequence, drumSequence, setIsGenerating, setDrumSequence, setPianoSequence, stopSequence, toast })}
-            disabled={isGenerating}
-            className="h-10 md:h-12 full-width rounded-full hover:bg-primary/20"
-            title="Generate Variation"
-          >
-            Try a variation
-            {isGenerating ? (
-              <Loader2 className="h-5 w-5 md:h-6 md:w-6 text-primary animate-spin" />
-            ) : (
-              <Wand2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            )}
-          </Button>
-
-          <button
-            onClick={() => setIsReferenceExpanded(!isReferenceExpanded)}
-            className="w-full p-3 md:p-4 flex items-center justify-between text-left hover:bg-primary/10 transition-colors"
-          >
-            <div className="flex items-center gap-2 md:gap-3">
-              <Settings2 className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0 text-primary/80" />
-              <span className="font-medium text-primary text-sm md:text-base">AI Music Analysis</span>
-            </div>
-            {isReferenceExpanded ? (
-              <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-primary/60" />
-            ) : (
-              <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-primary/60" />
-            )}
-          </button>
-          {isReferenceExpanded && (
-            <div className="p-3 md:p-4 pt-0">
-              <div className="max-h-[150px] md:max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent prose prose-invert prose-sm max-w-none w-full">
-                <ReactMarkdown
-                  components={{
-                    p: ({ children }) => <p className="text-primary/90 leading-relaxed mb-2 text-sm md:text-base">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc list-inside space-y-1 text-primary/90">{children}</ul>,
-                    li: ({ children }) => <li className="text-primary/90 text-sm md:text-base">{children}</li>,
-                    strong: ({ children }) => <strong className="font-semibold text-primary">{children}</strong>,
-                    em: ({ children }) => <em className="text-primary/90 italic">{children}</em>,
-                  }}
-                >
-                  {reference}
-                </ReactMarkdown>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="space-y-6 overflow-x-auto pb-4">
-        <div className="grid grid-cols-[100px_repeat(16,32px)] gap-1.5 min-w-[612px]">
-          <div className="text-xs md:text-sm font-medium text-primary/80">Steps</div>
-          {Array.from({ length: STEPS }, (_, i) => (
-            <div key={i} className="text-center text-xs text-primary/60">
-              {i + 1}
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-3 min-w-[612px]">
-          <div className="text-xs md:text-sm font-medium text-primary mb-2">Piano Notes</div>
-          {PIANO_NOTES.map(note => (
-            <div key={note} className="grid grid-cols-[100px_repeat(16,32px)] gap-1.5 group">
-              <div className="text-xs md:text-sm text-primary/80 group-hover:text-primary transition-colors">
-                {note}
-              </div>
-              {Array.from({ length: STEPS }, (_, step) => (
-                <div
-                  key={step}
-                  onClick={() => togglePianoStep(note, step)}
-                  className={`
-                    aspect-square rounded-sm cursor-pointer transition-all duration-200 transform hover:scale-95
-                    ${pianoSequence[note]?.includes(step)
-                      ? 'bg-primary shadow-lg shadow-primary/20'
-                      : step === currentStep && isPlaying
-                        ? 'bg-primary/30'
-                        : 'bg-secondary/40 hover:bg-secondary/60'}
-                  `}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-3 mt-6 min-w-[612px]">
-          <div className="text-xs md:text-sm font-medium text-primary mb-2">Drum Sounds</div>
-          {DRUM_SOUNDS.map(sound => (
-            <div key={sound} className="grid grid-cols-[100px_repeat(16,32px)] gap-1.5 group">
-              <div className="text-xs md:text-sm text-primary/80 group-hover:text-primary transition-colors">
-                {sound}
-              </div>
-              {Array.from({ length: STEPS }, (_, step) => (
-                <div
-                  key={step}
-                  onClick={() => toggleDrumStep(sound, step)}
-                  className={`
-                    aspect-square rounded-sm cursor-pointer transition-all duration-200 transform hover:scale-95
-                    ${drumSequence[sound].includes(step)
-                      ? 'bg-primary shadow-lg shadow-primary/20'
-                      : step === currentStep && isPlaying
-                        ? 'bg-primary/30'
-                        : 'bg-secondary/40 hover:bg-secondary/60'}
-                  `}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
