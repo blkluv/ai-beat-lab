@@ -1,11 +1,12 @@
 import MidiWriter from 'midi-writer-js';
-import { TEMPO_PRESETS } from './constants';
+import { JERSEY_CLUB_PRESETS } from './constants';
 
-export const handleExportMidi = ({ toast, tempo, pianoSequence, drumSequence }) => {    // Create a new MIDI track
+export const handleExportMidi = ({ toast, tempo, pianoSequence, drumSequence }) => {
+    // Create a new MIDI track
     const track = new MidiWriter.Track();
 
     // Set tempo
-    const bpm = TEMPO_PRESETS[tempo].bpm;
+    const bpm = JERSEY_CLUB_PRESETS[tempo].bpm;
     track.setTempo(bpm);
 
     // Convert piano sequence to MIDI notes
@@ -52,10 +53,6 @@ export const handleExportMidi = ({ toast, tempo, pianoSequence, drumSequence }) 
         }
     });
 
-    // Set the tempo
-    const tempoEvent = new MidiWriter.ProgramChangeEvent({ tempo: bpm });
-    track.setTempo(bpm);
-
     // Create a write stream
     const writer = new MidiWriter.Writer(track);
 
@@ -66,7 +63,7 @@ export const handleExportMidi = ({ toast, tempo, pianoSequence, drumSequence }) 
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ai-beat.midi';
+    a.download = 'jersey-club-beat.midi'; // Updated filename to reflect genre
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -74,6 +71,6 @@ export const handleExportMidi = ({ toast, tempo, pianoSequence, drumSequence }) 
 
     toast({
         title: "MIDI file exported",
-        description: "Your beat has been exported as a MIDI file.",
+        description: "Your Jersey Club beat has been exported as a MIDI file.", // Updated description
     });
 };
