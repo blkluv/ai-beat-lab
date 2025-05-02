@@ -1,19 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Play,
-  Pause,
-  Square,
-  Music2,
-  Volume2,
-  Settings2,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Share2,
-  Download,
-  Wand2,
-} from 'lucide-react';
-
+import { Play, Pause, Square, Music2, Volume2, Settings2, Loader2, ChevronDown, ChevronUp, Share2, Download, Wand2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -21,23 +7,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { useToast } from './ui/use-toast';
 import ReactMarkdown from 'react-markdown';
-import { useSearchParams } from 'react-router-dom';
-
-import {
-  playNoteByName,
-  playDrumSound,
-  loadDrumSamples,
-  getAudioContext,
-} from '@/lib/audio';
-
+import { playNoteByName, playDrumSound, loadDrumSamples, getAudioContext } from '@/lib/audio';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { JERSEY_CLUB_PRESETS } from './constants';
+import { useSearchParams } from 'react-router-dom';
+import { JERSEY_CLUB_PRESETS } from './constants'; // Updated import
 import { handleExportMidi } from './handleMidi';
 import { handleGenerateVariation } from './handleVariation';
 
@@ -47,7 +24,7 @@ const DRUM_SOUNDS = ['Kick', 'Snare', 'HiHat', 'Clap', 'OpenHat', 'Tom', 'Crash'
 
 function getMastraFetchUrl() {
   if (process.env.NODE_ENV === 'production') {
-    return 'https://dj.jersey.fm';
+    return 'https://faint-numerous-laptop.mastra.cloud';
   } else {
     return 'http://localhost:4111';
   }
@@ -496,15 +473,3 @@ export const Sequencer = () => {
           {isPlaying && (
             <Button
               variant="ghost"
-              size="icon"
-              onClick={stopSequence}
-              className="h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-primary/20"
-            >
-              <Square className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {!isAudioInitialized && (
-        <div className="mb-4 md:mb-6 p-3 md:p-4 bg-yellow-100/10 border border-yellow-400/20 rounded-lg text-yellow-20
